@@ -45,15 +45,31 @@
         }
         button:disabled { background-color: #21262d; color: #8b949e; }
         .status-row {
+            margin: 20px 0;
+            text-align: left;
+        }
+        .status-label {
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            margin: 10px 0;
-            font-size: 18px;
+            font-size: 16px;
+            margin-bottom: 8px;
         }
-        .btn-calc {
-            width: 40px; height: 40px; font-size: 20px; padding: 0;
-            background: #21262d; border: 1px solid #30363d; color: #58a6ff;
+        /* スマホでも動かしやすい太めのスライダー */
+        input[type="range"] {
+            width: 100%;
+            height: 10px;
+            background: #21262d;
+            border-radius: 5px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #58a6ff;
+            cursor: pointer;
         }
         input[type="text"] {
             width: 100%; padding: 10px; background: #0d1117; border: 1px solid #30363d;
@@ -61,55 +77,59 @@
         }
         .highlight { color: #ff7b72; font-weight: bold; }
         .pool-counter { font-size: 16px; color: #58a6ff; margin-top: 10px; }
+        .error-msg { color: #ff7b72; font-size: 14px; margin-top: 5px; display: none; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <h1>AGENCY APPARATUS</h1>
-    <div class="subtitle">エージェント登録・コードネーム生成システム</div>
+    <div class="subtitle">エージェント登録・100面ダイス基準システム</div>
 
+    <!-- ステップ1: 運命のルーレット -->
     <div class="box">
         <h3>1. 運命値（LUCK）の決定</h3>
         <button id="roulette-btn" onclick="spinRoulette()">ルーレットを起動</button>
         <p style="font-size: 24px; margin: 10px 0;">運 (LUCK): <span id="luck-val" class="highlight">--</span> %</p>
     </div>
 
+    <!-- ステップ2: 基礎能力の割り振り -->
     <div class="box">
-        <h3>2. 基礎ステータス配分</h3>
-        <p class="pool-counter">残り配分ポイント: <span id="pool-val">--</span> %</p>
+        <h3>2. 基礎ステータス配分 (合計80%にする)</h3>
+        <p class="pool-counter">現在の3つの合計: <span id="total-val">30</span> / 80 %</p>
+        <p id="error-msg" class="error-msg">⚠️ 合計が80%を超えています！調整してください。</p>
         
         <div class="status-row">
-            <span>心 (Mind):</span>
-            <div>
-                <button class="btn-calc" onclick="adjustStat('mind', -1)">-</button>
-                <span id="mind-val" style="display:inline-block; width:40px; text-align:center;">1</span>%
-                <button class="btn-calc" onclick="adjustStat('mind', 1)">+</button>
+            <div class="status-label">
+                <span>心 (Mind):</span>
+                <span><b id="mind-val">10</b> %</span>
             </div>
+            <input type="range" id="mind-range" min="10" max="60" value="10" disabled oninput="updateStats()">
         </div>
+        
         <div class="status-row">
-            <span>技 (Skill):</span>
-            <div>
-                <button class="btn-calc" onclick="adjustStat('skill', -1)">-</button>
-                <span id="skill-val" style="display:inline-block; width:40px; text-align:center;">1</span>%
-                <button class="btn-calc" onclick="adjustStat('skill', 1)">+</button>
+            <div class="status-label">
+                <span>技 (Skill):</span>
+                <span><b id="skill-val">10</b> %</span>
             </div>
+            <input type="range" id="skill-range" min="10" max="60" value="10" disabled oninput="updateStats()">
         </div>
+        
         <div class="status-row">
-            <span>体 (Body):</span>
-            <div>
-                <button class="btn-calc" onclick="adjustStat('body', -1)">-</button>
-                <span id="body-val" style="display:inline-block; width:40px; text-align:center;">1</span>%
-                <button class="btn-calc" onclick="adjustStat('body', 1)">+</button>
+            <div class="status-label">
+                <span>体 (Body):</span>
+                <span><b id="body-val">10</b> %</span>
             </div>
+            <input type="range" id="body-range" min="10" max="60" value="10" disabled oninput="updateStats()">
         </div>
     </div>
 
+    <!-- ステップ3: 表の顔 -->
     <div class="box">
         <h3>3. カバーストーリー（表の職業）</h3>
-        <input type="text" id="job-input" placeholder="例: ボディービルダー, 医師, カフェ店員" oninput="updateJob()">
+        <input type="text" id="job-input" placeholder="例: ボディービルダー, 医師, カフェ店員" oninput="checkReady()">
         <p style="text-align: left; font-size: 14px; color: #8b949e; margin-top: 10px;">
-            【特殊能力】 <span id="job-name">未設定</span>: <span class="highlight">10%</span> (固定値)
+            【特殊能力】 <span id="job-name">未設定</span>: <span class="highlight">20%</span> (固定値)
         </p>
     </div>
 
@@ -118,51 +138,67 @@
 
 <script>
     let luck = 0;
-    let pool = 0;
-    let stats = { mind: 1, skill: 1, body: 1 };
     let hasSpun = false;
 
     function spinRoulette() {
         if(hasSpun) return;
-        // 5〜25の間でランダムに運を決定
-        luck = Math.floor(Math.random() * (25 - 5 + 1)) + 5;
+        // 10, 20, 30, 40, 50 のいずれかをランダムで決定
+        const luckOptions = [10, 20, 30, 40, 50];
+        luck = luckOptions[Math.floor(Math.random() * luckOptions.length)];
         document.getElementById('luck-val').innerText = luck;
         
-        // 残りプールを計算 (40 - 運 - すでに1ずつ振られている最低値3)
-        pool = 40 - luck - 3;
+        // スライダーを解禁
+        document.getElementById('mind-range').disabled = false;
+        document.getElementById('skill-range').disabled = false;
+        document.getElementById('body-range').disabled = false;
         
-        document.getElementById('pool-val').innerText = pool;
         document.getElementById('roulette-btn').disabled = true;
         hasSpun = true;
-        checkReady();
+        updateStats();
     }
 
-    function adjustStat(stat, amount) {
+    function updateStats() {
         if(!hasSpun) return;
-        
-        // プラスする場合、プールが残っているか
-        if (amount > 0 && pool <= 0) return;
-        // マイナスする場合、最低値1を維持できるか
-        if (amount < 0 && stats[stat] <= 1) return;
 
-        stats[stat] += amount;
-        pool -= amount;
+        // スライダーの値を取得
+        let mind = parseInt(document.getElementById('mind-range').value);
+        let skill = parseInt(document.getElementById('skill-range').value);
+        let body = parseInt(document.getElementById('body-range').value);
 
-        document.getElementById(`${stat}-val`).innerText = stats[stat];
-        document.getElementById('pool-val').innerText = pool;
-        checkReady();
-    }
+        // 画面の数値を更新
+        document.getElementById('mind-val').innerText = mind;
+        document.getElementById('skill-val').innerText = skill;
+        document.getElementById('body-val').innerText = body;
 
-    function updateJob() {
-        let job = document.getElementById('job-input').value;
-        document.getElementById('job-name').innerText = job ? job : "未設定";
+        // 3つの合計を計算
+        let total = mind + skill + body;
+        document.getElementById('total-val').innerText = total;
+
+        // エラーチェック（合計80%ぴったりにする必要がある）
+        const errorMsg = document.getElementById('error-msg');
+        if (total > 80) {
+            errorMsg.style.display = 'block';
+            errorMsg.innerText = `⚠️ 合計が ${total}% になっています。80%に減らしてください。`;
+        } else if (total < 80) {
+            errorMsg.style.display = 'block';
+            errorMsg.innerText = `💡 あと ${80 - total}% 分、いずれかのステータスを増やせます。`;
+        } else {
+            errorMsg.style.display = 'none'; // ぴったり80%
+        }
+
         checkReady();
     }
 
     function checkReady() {
+        let mind = parseInt(document.getElementById('mind-range').value);
+        let skill = parseInt(document.getElementById('skill-range').value);
+        let body = parseInt(document.getElementById('body-range').value);
         let job = document.getElementById('job-input').value;
-        // プールを綺麗に使い切り、かつ職業が入力されていれば送信ボタンを有効化
-        if (hasSpun && pool === 0 && job.trim() !== "") {
+
+        document.getElementById('job-name').innerText = job ? job : "未設定";
+
+        // ルーレット済み、かつ心技体の合計が80ぴったり、かつ職業が入力されている
+        if (hasSpun && (mind + skill + body === 80) && job.trim() !== "") {
             document.getElementById('submit-btn').disabled = false;
         } else {
             document.getElementById('submit-btn').disabled = true;
@@ -170,7 +206,12 @@
     }
 
     function finishCharacter() {
-        alert(`【エージェント登録完了】\n運: ${luck}%\n心: ${stats.mind}%\n技: ${stats.skill}%\n体: ${stats.body}%\n特殊能力[${document.getElementById('job-input').value}]: 10%\n\n総計50%のデータが保存されました(デモ版)`);
+        let mind = document.getElementById('mind-range').value;
+        let skill = document.getElementById('skill-range').value;
+        let body = document.getElementById('body-range').value;
+        let job = document.getElementById('job-input').value;
+        
+        alert(`【エージェント登録完了】\n\n運(LUCK): ${luck}%\n心(Mind): ${mind}%\n技(Skill): ${skill}%\n体(Body): ${body}%\n特殊能力[${job}]: 20%\n\n総計100%（100面ダイス完全対応）のデータが本部に同期されました。`);
     }
 </script>
 
