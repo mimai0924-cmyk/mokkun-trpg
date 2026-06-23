@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>秘密結社エージェント管理システム</title>
+    <style>
+        /* 秘密結社風のダークサイバーデザイン */
+        body {
+            background-color: #0d1117;
+            color: #c9d1d9;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+        }
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            background: #161b22;
+            padding: 25px;
+            border-radius: 10px;
+            border: 1px solid #30363d;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+        h1 { color: #58a6ff; font-size: 20px; margin-bottom: 5px; }
+        .subtitle { color: #8b949e; font-size: 12px; margin-bottom: 25px; }
+        .box {
+            background: #0d1117;
+            border: 1px solid #30363d;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+        }
+        button {
+            background-color: #238636;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            width: 100%;
+        }
+        button:disabled { background-color: #21262d; color: #8b949e; }
+        .status-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 10px 0;
+            font-size: 18px;
+        }
+        .btn-calc {
+            width: 40px; height: 40px; font-size: 20px; padding: 0;
+            background: #21262d; border: 1px solid #30363d; color: #58a6ff;
+        }
+        input[type="text"] {
+            width: 100%; padding: 10px; background: #0d1117; border: 1px solid #30363d;
+            color: white; border-radius: 6px; box-sizing: border-box; font-size: 16px;
+        }
+        .highlight { color: #ff7b72; font-weight: bold; }
+        .pool-counter { font-size: 16px; color: #58a6ff; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>AGENCY APPARATUS</h1>
+    <div class="subtitle">エージェント登録・コードネーム生成システム</div>
+
+    <div class="box">
+        <h3>1. 運命値（LUCK）の決定</h3>
+        <button id="roulette-btn" onclick="spinRoulette()">ルーレットを起動</button>
+        <p style="font-size: 24px; margin: 10px 0;">運 (LUCK): <span id="luck-val" class="highlight">--</span> %</p>
+    </div>
+
+    <div class="box">
+        <h3>2. 基礎ステータス配分</h3>
+        <p class="pool-counter">残り配分ポイント: <span id="pool-val">--</span> %</p>
+        
+        <div class="status-row">
+            <span>心 (Mind):</span>
+            <div>
+                <button class="btn-calc" onclick="adjustStat('mind', -1)">-</button>
+                <span id="mind-val" style="display:inline-block; width:40px; text-align:center;">1</span>%
+                <button class="btn-calc" onclick="adjustStat('mind', 1)">+</button>
+            </div>
+        </div>
+        <div class="status-row">
+            <span>技 (Skill):</span>
+            <div>
+                <button class="btn-calc" onclick="adjustStat('skill', -1)">-</button>
+                <span id="skill-val" style="display:inline-block; width:40px; text-align:center;">1</span>%
+                <button class="btn-calc" onclick="adjustStat('skill', 1)">+</button>
+            </div>
+        </div>
+        <div class="status-row">
+            <span>体 (Body):</span>
+            <div>
+                <button class="btn-calc" onclick="adjustStat('body', -1)">-</button>
+                <span id="body-val" style="display:inline-block; width:40px; text-align:center;">1</span>%
+                <button class="btn-calc" onclick="adjustStat('body', 1)">+</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="box">
+        <h3>3. カバーストーリー（表の職業）</h3>
+        <input type="text" id="job-input" placeholder="例: ボディービルダー, 医師, カフェ店員" oninput="updateJob()">
+        <p style="text-align: left; font-size: 14px; color: #8b949e; margin-top: 10px;">
+            【特殊能力】 <span id="job-name">未設定</span>: <span class="highlight">10%</span> (固定値)
+        </p>
+    </div>
+
+    <button id="submit-btn" disabled onclick="finishCharacter()">エージェントデータを本部に送信</button>
+</div>
+
+<script>
+    let luck = 0;
+    let pool = 0;
+    let stats = { mind: 1, skill: 1, body: 1 };
+    let hasSpun = false;
+
+    function spinRoulette() {
+        if(hasSpun) return;
+        // 5〜25の間でランダムに運を決定
+        luck = Math.floor(Math.random() * (25 - 5 + 1)) + 5;
+        document.getElementById('luck-val').innerText = luck;
+        
+        // 残りプールを計算 (40 - 運 - すでに1ずつ振られている最低値3)
+        pool = 40 - luck - 3;
+        
+        document.getElementById('pool-val').innerText = pool;
+        document.getElementById('roulette-btn').disabled = true;
+        hasSpun = true;
+        checkReady();
+    }
+
+    function adjustStat(stat, amount) {
+        if(!hasSpun) return;
+        
+        // プラスする場合、プールが残っているか
+        if (amount > 0 && pool <= 0) return;
+        // マイナスする場合、最低値1を維持できるか
+        if (amount < 0 && stats[stat] <= 1) return;
+
+        stats[stat] += amount;
+        pool -= amount;
+
+        document.getElementById(`${stat}-val`).innerText = stats[stat];
+        document.getElementById('pool-val').innerText = pool;
+        checkReady();
+    }
+
+    function updateJob() {
+        let job = document.getElementById('job-input').value;
+        document.getElementById('job-name').innerText = job ? job : "未設定";
+        checkReady();
+    }
+
+    function checkReady() {
+        let job = document.getElementById('job-input').value;
+        // プールを綺麗に使い切り、かつ職業が入力されていれば送信ボタンを有効化
+        if (hasSpun && pool === 0 && job.trim() !== "") {
+            document.getElementById('submit-btn').disabled = false;
+        } else {
+            document.getElementById('submit-btn').disabled = true;
+        }
+    }
+
+    function finishCharacter() {
+        alert(`【エージェント登録完了】\n運: ${luck}%\n心: ${stats.mind}%\n技: ${stats.skill}%\n体: ${stats.body}%\n特殊能力[${document.getElementById('job-input').value}]: 10%\n\n総計50%のデータが保存されました(デモ版)`);
+    }
+</script>
+
+</body>
+</html>
