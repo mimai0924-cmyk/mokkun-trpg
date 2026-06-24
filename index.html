@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>秘密結社エージェント管理システム</title>
     <style>
-        /* 秘密結社風のダークサイバーデザイン */
         body {
             background-color: #0d1117;
             color: #c9d1d9;
@@ -32,114 +31,142 @@
             border-radius: 6px;
             margin-bottom: 15px;
         }
+        /* 各画面（セクション）の初期表示制御 */
+        .page { display: none; }
+        .active { display: block; }
+
         button {
-            background-color: #238636;
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            font-size: 16px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: bold;
-            width: 100%;
+            background-color: #238636; color: white; border: none; padding: 12px 24px;
+            font-size: 16px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%;
+            margin-bottom: 10px;
         }
         button:disabled { background-color: #21262d; color: #8b949e; }
         .btn-secondary {
-            background-color: #21262d;
-            border: 1px solid #30363d;
-            color: #58a6ff;
-            padding: 8px 16px;
-            font-size: 14px;
-            margin-top: 10px;
-            width: auto;
+            background-color: #21262d; border: 1px solid #30363d; color: #58a6ff;
+            padding: 12px 24px; font-size: 16px; width: 100%; border-radius: 6px; font-weight: bold;
         }
-        .status-row {
-            margin: 20px 0;
-            text-align: left;
-        }
-        .status-label {
-            display: flex;
-            justify-content: space-between;
-            font-size: 16px;
-            margin-bottom: 8px;
-        }
-        input[type="range"] {
-            width: 100%; height: 10px; background: #21262d; border-radius: 5px; outline: none; -webkit-appearance: none;
-        }
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none; width: 24px; height: 24px; border-radius: 50%; background: #58a6ff; cursor: pointer;
-        }
-        input[type="text"] {
-            width: 100%; padding: 10px; background: #0d1117; border: 1px solid #30363d;
-            color: white; border-radius: 6px; box-sizing: border-box; font-size: 16px;
+        .status-row { margin: 20px 0; text-align: left; }
+        .status-label { display: flex; justify-content: space-between; font-size: 16px; margin-bottom: 8px; }
+        input[type="range"] { width: 100%; height: 10px; background: #21262d; border-radius: 5px; outline: none; -webkit-appearance: none; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 24px; height: 24px; border-radius: 50%; background: #58a6ff; cursor: pointer; }
+        input[type="text"], input[type="number"], select {
+            width: 100%; padding: 12px; background: #0d1117; border: 1px solid #30363d;
+            color: white; border-radius: 6px; box-sizing: border-box; font-size: 16px; margin-bottom: 15px;
         }
         .highlight { color: #ff7b72; font-weight: bold; }
-        .pool-counter { font-size: 16px; color: #58a6ff; margin-top: 10px; }
+        .room-number { font-size: 32px; color: #58a6ff; font-weight: bold; letter-spacing: 5px; margin: 15px 0; }
         .error-msg { color: #ff7b72; font-size: 14px; margin-top: 5px; display: none; }
         .flex-group { display: flex; gap: 10px; margin-bottom: 10px; }
+        
+        /* 参加者リストのスタイル */
+        .member-list { text-align: left; background: #0d1117; padding: 10px; border-radius: 6px; border: 1px solid #30363d; }
+        .member-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #21262d; }
+        .member-item:last-child { border-bottom: none; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <h1>AGENCY APPARATUS</h1>
-    <div class="subtitle">エージェント登録・100面ダイス基準システム</div>
+    <div class="subtitle">エージェント管理・マルチプレイ稼働システム</div>
 
-    <div class="box">
-        <h3>1. 運命値（LUCK）の決定</h3>
-        <button id="roulette-btn" onclick="spinRoulette()">ルーレットを起動</button>
-        <p style="font-size: 24px; margin: 10px 0;">運 (LUCK): <span id="luck-val" class="highlight">--</span> %</p>
+    <!-- -------------------------------------------------- -->
+    <!-- 画面1: キャラメイク画面 -->
+    <!-- -------------------------------------------------- -->
+    <div id="page-make" class="page active">
+        <div class="box">
+            <h3>1. 運命値（LUCK）の決定</h3>
+            <button id="roulette-btn" onclick="spinRoulette()">ルーレットを起動</button>
+            <p style="font-size: 24px; margin: 10px 0;">運 (LUCK): <span id="luck-val" class="highlight">--</span> %</p>
+        </div>
+
+        <div class="box">
+            <h3>2. 基礎ステータス配分 (合計80%にする)</h3>
+            <p style="font-size:16px; color:#58a6ff; margin-top:10px;">現在の3つの合計: <span id="total-val">30</span> / 80 %</p>
+            <p id="error-msg" class="error-msg">⚠️ 調整が必要です。</p>
+            
+            <div class="status-row">
+                <div class="status-label"><span>心 (Mind):</span> <span><b id="mind-val">10</b> %</span></div>
+                <input type="range" id="mind-range" min="10" max="60" value="10" disabled oninput="updateStats()">
+            </div>
+            <div class="status-row">
+                <div class="status-label"><span>技 (Skill):</span> <span><b id="skill-val">10</b> %</span></div>
+                <input type="range" id="skill-range" min="10" max="60" value="10" disabled oninput="updateStats()">
+            </div>
+            <div class="status-row">
+                <div class="status-label"><span>体 (Body):</span> <span><b id="body-val">10</b> %</span></div>
+                <input type="range" id="body-range" min="10" max="60" value="10" disabled oninput="updateStats()">
+            </div>
+        </div>
+
+        <div class="box">
+            <h3>3. カバーストーリー（表の職業）</h3>
+            <div class="flex-group">
+                <input type="text" id="job-input" placeholder="例: 警察, 医師, 教師" oninput="checkReady()">
+                <button class="btn-secondary" style="margin:0; width:auto; white-space:nowrap; padding:10px;" onclick="generateRandomJob()">ランダム生成</button>
+            </div>
+            <p style="text-align: left; font-size: 14px; color: #8b949e; margin-top: 10px;">
+                【特殊能力】 <span id="job-name" class="highlight">未設定</span>: <span class="highlight">20%</span> (固定値)
+            </p>
+        </div>
+
+        <button id="submit-btn" disabled onclick="goToStorySelect()">エージェントデータを本部に送信</button>
     </div>
 
-    <div class="box">
-        <h3>2. 基礎ステータス配分 (合計80%にする)</h3>
-        <p class="pool-counter">現在の3つの合計: <span id="total-val">30</span> / 80 %</p>
-        <p id="error-msg" class="error-msg">⚠️ 合計が80%を超えています！調整してください。</p>
-        
-        <div class="status-row">
-            <div class="status-label">
-                <span>心 (Mind):</span>
-                <span><b id="mind-val">10</b> %</span>
-            </div>
-            <input type="range" id="mind-range" min="10" max="60" value="10" disabled oninput="updateStats()">
+    <!-- -------------------------------------------------- -->
+    <!-- 画面2: ストーリー選択＆パーティ結成画面 -->
+    <!-- -------------------------------------------------- -->
+    <div id="page-lobby-select" class="page">
+        <div class="box">
+            <h3>4. ミッション（ストーリー）選択</h3>
+            <select id="story-select">
+                <option value="story1">作戦コード：新月の潜入劇 (推奨:2〜4人)</option>
+                <option value="story2">作戦コード：崩壊するサイバー都市 (推奨:3〜5人)</option>
+            </select>
         </div>
-        
-        <div class="status-row">
-            <div class="status-label">
-                <span>技 (Skill):</span>
-                <span><b id="skill-val">10</b> %</span>
-            </div>
-            <input type="range" id="skill-range" min="10" max="60" value="10" disabled oninput="updateStats()">
-        </div>
-        
-        <div class="status-row">
-            <div class="status-label">
-                <span>体 (Body):</span>
-                <span><b id="body-val">10</b> %</span>
-            </div>
-            <input type="range" id="body-range" min="10" max="60" value="10" disabled oninput="updateStats()">
+
+        <div class="box">
+            <h3>5. パーティの結成</h3>
+            <p style="font-size:14px; color:#8b949e; text-align:left; margin-bottom:15px;">
+                あなたがホストとなり部屋を作るか、友達が作った部屋番号を入力して参加してください。会話はDiscord等で行ってください。
+            </p>
+            <button onclick="createParty()">新規パーティを結成（ホスト）</button>
+            <div style="margin: 15px 0; border-top: 1px solid #30363d; padding-top: 15px;"></div>
+            <input type="number" id="room-input" placeholder="4桁の部屋番号を入力">
+            <button class="btn-secondary" onclick="joinParty()">パーティに参加する</button>
         </div>
     </div>
 
-    <div class="box">
-        <h3>3. カバーストーリー（表の職業）</h3>
-        <div class="flex-group">
-            <input type="text" id="job-input" placeholder="例: 警察, 医師, 教師" oninput="checkReady()">
-            <button class="btn-secondary" style="margin:0; white-space:nowrap;" onclick="generateRandomJob()">ランダム生成</button>
+    <!-- -------------------------------------------------- -->
+    <!-- 画面3: ロビー待機画面（マルチ同期） -->
+    <!-- -------------------------------------------------- -->
+    <div id="page-lobby-wait" class="page">
+        <div class="box">
+            <h3 id="lobby-title">パーティ待機中...</h3>
+            <p style="font-size:14px; color:#8b949e; margin-bottom:5px;">【共有用】部屋番号（ROOM ID）</p>
+            <div id="room-display" class="room-number">0000</div>
+            <p style="font-size:12px; color:#ff7b72;">※この番号をDiscordなどでメンバーに共有してください。</p>
         </div>
-        <p style="text-align: left; font-size: 14px; color: #8b949e; margin-top: 10px;">
-            【特殊能力】 <span id="job-name" class="highlight">未設定</span>: <span class="highlight">20%</span> (固定値)
-        </p>
+
+        <div class="box">
+            <h3>現在の潜入メンバー</h3>
+            <div class="member-list" id="member-container">
+                <!-- ここに参加者が自動で追加されます -->
+            </div>
+        </div>
+
+        <button id="start-btn" style="display:none;" onclick="startMission()">ミッション開始（通信同期用）</button>
+        <p id="member-wait-msg" style="color:#8b949e; font-size:14px; display:none;">ホストが作戦を開始するのを待っています...</p>
     </div>
 
-    <button id="submit-btn" disabled onclick="finishCharacter()">エージェントデータを本部に送信</button>
 </div>
 
 <script>
+    // --- キャラメイク用の変数と処理 ---
     let luck = 0;
     let hasSpun = false;
+    let myCharacter = {}; // 自分の作ったキャラデータを保持するオブジェクト
 
-    // ランダム生成用のワードパレット
     const adjectives = ["怪しい", "熱血な", "やたら筋肉質な", "不眠症の", "元ヤンの", "プロ奢られ手の", "エリート", "隠れオタクの", "人見知りの", "自称・天才"];
     const jobs = ["占い師", "幼稚園の先生", "ひよこ鑑定士", "カレー屋の店主", "水族館の飼育員", "探偵", "実演販売士", "図書館司書", "ユーチューバー"];
 
@@ -148,11 +175,9 @@
         const luckOptions = [10, 20, 30, 40, 50];
         luck = luckOptions[Math.floor(Math.random() * luckOptions.length)];
         document.getElementById('luck-val').innerText = luck;
-        
         document.getElementById('mind-range').disabled = false;
         document.getElementById('skill-range').disabled = false;
         document.getElementById('body-range').disabled = false;
-        
         document.getElementById('roulette-btn').disabled = true;
         hasSpun = true;
         updateStats();
@@ -161,19 +186,15 @@
     function generateRandomJob() {
         const randomAdj = adjectives[Math.floor(Math.random() * adjectives.length)];
         const randomJob = jobs[Math.floor(Math.random() * jobs.length)];
-        const combined = `${randomAdj}${randomJob}`;
-        
-        document.getElementById('job-input').value = combined;
+        document.getElementById('job-input').value = `${randomAdj}${randomJob}`;
         checkReady();
     }
 
     function updateStats() {
         if(!hasSpun) return;
-
         let mind = parseInt(document.getElementById('mind-range').value);
         let skill = parseInt(document.getElementById('skill-range').value);
         let body = parseInt(document.getElementById('body-range').value);
-
         document.getElementById('mind-val').innerText = mind;
         document.getElementById('skill-val').innerText = skill;
         document.getElementById('body-val').innerText = body;
@@ -184,14 +205,13 @@
         const errorMsg = document.getElementById('error-msg');
         if (total > 80) {
             errorMsg.style.display = 'block';
-            errorMsg.innerText = `⚠️ 合計が ${total}% になっています。80%に減らしてください。`;
+            errorMsg.innerText = `⚠️ 合計が ${total}% です。80%に減らしてください。`;
         } else if (total < 80) {
             errorMsg.style.display = 'block';
-            errorMsg.innerText = `💡 あと ${80 - total}% 分、いずれかのステータスを増やせます。`;
+            errorMsg.innerText = `💡 あと ${80 - total}% 分、ステータスを増やせます。`;
         } else {
             errorMsg.style.display = 'none';
         }
-
         checkReady();
     }
 
@@ -200,23 +220,70 @@
         let skill = parseInt(document.getElementById('skill-range').value);
         let body = parseInt(document.getElementById('body-range').value);
         let job = document.getElementById('job-input').value;
-
         document.getElementById('job-name').innerText = job ? job : "未設定";
 
         if (hasSpun && (mind + skill + body === 80) && job.trim() !== "") {
             document.getElementById('submit-btn').disabled = false;
+            // キャラデータを保存
+            myCharacter = { name: job, mind: mind, skill: skill, body: body, luck: luck };
         } else {
             document.getElementById('submit-btn').disabled = true;
         }
     }
 
-    function finishCharacter() {
-        let mind = document.getElementById('mind-range').value;
-        let skill = document.getElementById('skill-range').value;
-        let body = document.getElementById('body-range').value;
-        let job = document.getElementById('job-input').value;
+    // --- 画面遷移のコントロール関数 ---
+    function showPage(pageId) {
+        document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+        document.getElementById(pageId).classList.add('active');
+        window.scrollTo(0, 0);
+    }
+
+    function goToStorySelect() {
+        showPage('page-lobby-select');
+    }
+
+    // --- マルチプレイの擬似（シミュレーション）処理 ---
+    function createParty() {
+        // ホストとして部屋を作成
+        const randomRoomId = Math.floor(1000 + Math.random() * 9000); // 4桁のランダム数字
+        document.getElementById('room-display').innerText = randomRoomId;
         
-        alert(`【エージェント登録完了】\n\n運(LUCK): ${luck}%\n心(Mind): ${mind}%\n技(Skill): ${skill}%\n体(Body): ${body}%\n特殊能力[${job}]: 20%\n\n総計100%（100面ダイス完全対応）のデータが本部に同期されました。`);
+        // 画面切り替え
+        showPage('page-lobby-wait');
+        document.getElementById('start-btn').style.display = 'block'; // ホスト専用スタートボタン
+        document.getElementById('member-wait-msg').style.display = 'none';
+
+        // 擬似的にメンバーリストを表示（自分を追加）
+        const container = document.getElementById('member-container');
+        container.innerHTML = `
+            <div class="member-item"><span>👑 あなた (${myCharacter.name})</span> <span>心:${myCharacter.mind} 技:${myCharacter.skill} 体:${myCharacter.body} 運:${myCharacter.luck}</span></div>
+            <div class="member-item" style="color:#8b949e;"><span>👤 ゲストA (不眠症の占い師) ※デモ表示</span> <span>心:40 技:20 体:20 運:30</span></div>
+        `;
+    }
+
+    function joinParty() {
+        const roomInput = document.getElementById('room-input').value;
+        if(!roomInput || roomInput.length < 4) {
+            alert("正しい4桁の部屋番号を入力してください。");
+            return;
+        }
+        document.getElementById('room-display').innerText = roomInput;
+
+        // 画面切り替え
+        showPage('page-lobby-wait');
+        document.getElementById('start-btn').style.display = 'none'; 
+        document.getElementById('member-wait-msg').style.display = 'block'; // メンバー専用待機メッセージ
+
+        // 擬似的にメンバーリストを表示
+        const container = document.getElementById('member-container');
+        container.innerHTML = `
+            <div class="member-item" style="color:#8b949e;"><span>👑 ホスト (エリート探偵) ※デモ表示</span> <span>心:50 技:20 体:10 運:20</span></div>
+            <div class="member-item"><span>👤 あなた (${myCharacter.name})</span> <span>心:${myCharacter.mind} 技:${myCharacter.skill} 体:${myCharacter.body} 運:${myCharacter.luck}</span></div>
+        `;
+    }
+
+    function startMission() {
+        alert("作戦開始！（ここに次のストーリーや謎解き画面のプログラムを繋いでいきます）");
     }
 </script>
 
