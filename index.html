@@ -44,6 +44,15 @@
             width: 100%;
         }
         button:disabled { background-color: #21262d; color: #8b949e; }
+        .btn-secondary {
+            background-color: #21262d;
+            border: 1px solid #30363d;
+            color: #58a6ff;
+            padding: 8px 16px;
+            font-size: 14px;
+            margin-top: 10px;
+            width: auto;
+        }
         .status-row {
             margin: 20px 0;
             text-align: left;
@@ -54,22 +63,11 @@
             font-size: 16px;
             margin-bottom: 8px;
         }
-        /* スマホでも動かしやすい太めのスライダー */
         input[type="range"] {
-            width: 100%;
-            height: 10px;
-            background: #21262d;
-            border-radius: 5px;
-            outline: none;
-            -webkit-appearance: none;
+            width: 100%; height: 10px; background: #21262d; border-radius: 5px; outline: none; -webkit-appearance: none;
         }
         input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            background: #58a6ff;
-            cursor: pointer;
+            -webkit-appearance: none; width: 24px; height: 24px; border-radius: 50%; background: #58a6ff; cursor: pointer;
         }
         input[type="text"] {
             width: 100%; padding: 10px; background: #0d1117; border: 1px solid #30363d;
@@ -78,6 +76,7 @@
         .highlight { color: #ff7b72; font-weight: bold; }
         .pool-counter { font-size: 16px; color: #58a6ff; margin-top: 10px; }
         .error-msg { color: #ff7b72; font-size: 14px; margin-top: 5px; display: none; }
+        .flex-group { display: flex; gap: 10px; margin-bottom: 10px; }
     </style>
 </head>
 <body>
@@ -86,14 +85,12 @@
     <h1>AGENCY APPARATUS</h1>
     <div class="subtitle">エージェント登録・100面ダイス基準システム</div>
 
-    <!-- ステップ1: 運命のルーレット -->
     <div class="box">
         <h3>1. 運命値（LUCK）の決定</h3>
         <button id="roulette-btn" onclick="spinRoulette()">ルーレットを起動</button>
         <p style="font-size: 24px; margin: 10px 0;">運 (LUCK): <span id="luck-val" class="highlight">--</span> %</p>
     </div>
 
-    <!-- ステップ2: 基礎能力の割り振り -->
     <div class="box">
         <h3>2. 基礎ステータス配分 (合計80%にする)</h3>
         <p class="pool-counter">現在の3つの合計: <span id="total-val">30</span> / 80 %</p>
@@ -124,12 +121,14 @@
         </div>
     </div>
 
-    <!-- ステップ3: 表の顔 -->
     <div class="box">
         <h3>3. カバーストーリー（表の職業）</h3>
-        <input type="text" id="job-input" placeholder="例: ボディービルダー, 医師, カフェ店員" oninput="checkReady()">
+        <div class="flex-group">
+            <input type="text" id="job-input" placeholder="例: 警察, 医師, 教師" oninput="checkReady()">
+            <button class="btn-secondary" style="margin:0; white-space:nowrap;" onclick="generateRandomJob()">ランダム生成</button>
+        </div>
         <p style="text-align: left; font-size: 14px; color: #8b949e; margin-top: 10px;">
-            【特殊能力】 <span id="job-name">未設定</span>: <span class="highlight">20%</span> (固定値)
+            【特殊能力】 <span id="job-name" class="highlight">未設定</span>: <span class="highlight">20%</span> (固定値)
         </p>
     </div>
 
@@ -140,14 +139,16 @@
     let luck = 0;
     let hasSpun = false;
 
+    // ランダム生成用のワードパレット
+    const adjectives = ["怪しい", "熱血な", "やたら筋肉質な", "不眠症の", "元ヤンの", "プロ奢られ手の", "エリート", "隠れオタクの", "人見知りの", "自称・天才"];
+    const jobs = ["占い師", "幼稚園の先生", "ひよこ鑑定士", "カレー屋の店主", "水族館の飼育員", "探偵", "実演販売士", "図書館司書", "ユーチューバー"];
+
     function spinRoulette() {
         if(hasSpun) return;
-        // 10, 20, 30, 40, 50 のいずれかをランダムで決定
         const luckOptions = [10, 20, 30, 40, 50];
         luck = luckOptions[Math.floor(Math.random() * luckOptions.length)];
         document.getElementById('luck-val').innerText = luck;
         
-        // スライダーを解禁
         document.getElementById('mind-range').disabled = false;
         document.getElementById('skill-range').disabled = false;
         document.getElementById('body-range').disabled = false;
@@ -157,24 +158,29 @@
         updateStats();
     }
 
+    function generateRandomJob() {
+        const randomAdj = adjectives[Math.floor(Math.random() * adjectives.length)];
+        const randomJob = jobs[Math.floor(Math.random() * jobs.length)];
+        const combined = `${randomAdj}${randomJob}`;
+        
+        document.getElementById('job-input').value = combined;
+        checkReady();
+    }
+
     function updateStats() {
         if(!hasSpun) return;
 
-        // スライダーの値を取得
         let mind = parseInt(document.getElementById('mind-range').value);
         let skill = parseInt(document.getElementById('skill-range').value);
         let body = parseInt(document.getElementById('body-range').value);
 
-        // 画面の数値を更新
         document.getElementById('mind-val').innerText = mind;
         document.getElementById('skill-val').innerText = skill;
         document.getElementById('body-val').innerText = body;
 
-        // 3つの合計を計算
         let total = mind + skill + body;
         document.getElementById('total-val').innerText = total;
 
-        // エラーチェック（合計80%ぴったりにする必要がある）
         const errorMsg = document.getElementById('error-msg');
         if (total > 80) {
             errorMsg.style.display = 'block';
@@ -183,7 +189,7 @@
             errorMsg.style.display = 'block';
             errorMsg.innerText = `💡 あと ${80 - total}% 分、いずれかのステータスを増やせます。`;
         } else {
-            errorMsg.style.display = 'none'; // ぴったり80%
+            errorMsg.style.display = 'none';
         }
 
         checkReady();
@@ -197,7 +203,6 @@
 
         document.getElementById('job-name').innerText = job ? job : "未設定";
 
-        // ルーレット済み、かつ心技体の合計が80ぴったり、かつ職業が入力されている
         if (hasSpun && (mind + skill + body === 80) && job.trim() !== "") {
             document.getElementById('submit-btn').disabled = false;
         } else {
