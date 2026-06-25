@@ -44,11 +44,17 @@
             background-color: #21262d; border: 1px solid #30363d; color: #58a6ff;
             padding: 12px 24px; font-size: 16px; width: 100%; border-radius: 6px; font-weight: bold;
         }
+        .btn-choice {
+            background-color: #1f6feb; color: white; margin-top: 10px;
+        }
         .btn-investigate {
             background-color: #1f6feb; color: white; margin: 8px 0;
         }
         .btn-investigate:disabled {
             background-color: #0d1117; color: #30363d; border: 1px dashed #30363d;
+        }
+        .btn-dice {
+            background-color: #da3633; color: white; font-size: 18px; letter-spacing: 1px;
         }
         
         .status-row { margin: 20px 0; text-align: left; }
@@ -61,6 +67,7 @@
             color: white; border-radius: 6px; box-sizing: border-box; font-size: 16px; margin-bottom: 15px;
         }
         .highlight { color: #ff7b72; font-weight: bold; }
+        .success-text { color: #58a6ff; font-weight: bold; }
         .story-text { text-align: left; line-height: 1.6; font-size: 15px; color: #c9d1d9; white-space: pre-wrap; }
         .room-number { font-size: 32px; color: #58a6ff; font-weight: bold; letter-spacing: 5px; margin: 15px 0; }
         .error-msg { color: #ff7b72; font-size: 14px; margin-top: 5px; display: none; }
@@ -73,6 +80,9 @@
         .secret-box {
             background: #1c1314; border: 1px solid #ff7b72; color: #ffa6a1;
             padding: 15px; border-radius: 6px; margin-top: 15px; text-align: left; display: none;
+        }
+        .dice-result {
+            font-size: 28px; font-weight: bold; margin: 15px 0; display: none;
         }
     </style>
 </head>
@@ -155,9 +165,9 @@
         <div class="box">
             <h3>作戦コード：深淵の研究所 - 潜入開始</h3>
             <div class="story-text">
-    あなたたちは組織の命を受け、人里離れた山奥にある製薬会社の「地下研究施設」へと潜入した。
-    ここ数日、施設からの通信が完全に途絶えており、裏で「違法な生物実験」が行われていた噂がある。
-    床には緑色の不気味な「粘液」がべっとりと付着していた……。各エージェントは調査を開始せよ。
+あなたたちは組織の命を受け、人里離れた山奥にある製薬会社の「地下研究施設」へと潜入した。
+ここ数日、施設からの通信が完全に途絶えており、裏で「違法な生物実験」が行われていた噂がある。
+床には緑色の不気味な「粘液」がべっとりと付着していた……。各エージェントは調査を開始せよ。
             </div>
         </div>
         <div class="box">
@@ -173,16 +183,68 @@
             <p id="intro-wait-msg" style="color:#8b949e; font-size:14px; display:none;">ホストが次のエリアへの扉を開けるのを待っています...</p>
         </div>
     </div>
+
+    <div id="page-story-choice" class="page">
+        <div class="box">
+            <h3>分岐点：不気味な二つのルート</h3>
+            <div class="story-text">
+ロビーの奥に進むと、通路が二手へと分かれていた。
+
+**【西棟：研究開発エリア】**
+頑丈な電子セキュリティ扉。解除には高度なハッキング技術が必要そうだ。
+**【東棟：生体管理エリア】**
+非常階段の奥へと続く、粘液と「何かを引きずった大きな足跡」が残る暗闇のルート。
+
+Discordで相談し、全員が【同じボタン】をタップして進んでください。
+            </div>
+        </div>
+        <div class="box">
+            <h3>どちらのエリアに潜入しますか？</h3>
+            <button class="btn-choice" onclick="selectRoute('west')">👉 西棟：研究開発エリアへ（要：技）</button>
+            <button class="btn-choice" style="background-color: #d93a49;" onclick="selectRoute('east')">👉 東棟：生体管理エリアへ（要：心）</button>
+        </div>
+    </div>
+
+    <div id="page-story-dice" class="page">
+        <div class="box">
+            <h3 id="dice-title">関門チェック</h3>
+            <div id="dice-story" class="story-text">
+                </div>
+        </div>
+
+        <div class="box">
+            <h3>🎲 100面ダイスによる運命判定</h3>
+            <p id="dice-instruction" style="font-size:14px; color:#8b949e; text-align:left; margin-bottom:15px;">
+                </p>
+            
+            <button id="roll-btn" class="btn-dice" onclick="roll100()">100面ダイスをロール！</button>
+            
+            <div id="dice-result-area" class="dice-result">
+                出目: <span id="dice-num">--</span> / <span id="dice-target">--</span>% 以下で成功<br>
+                <span id="dice-status">判定中...</span>
+            </div>
+        </div>
+
+        <div class="box" id="dice-outcome-box" style="display:none;">
+            <h3>判定結果による展開</h3>
+            <div id="dice-outcome-text" class="story-text" style="margin-bottom: 15px;">
+                </div>
+            <button id="dice-next-btn" style="display:none;" onclick="goToClimax()">クライマックスへ進む（ホスト用）</button>
+            <p id="dice-wait-msg" style="color:#8b949e; font-size:14px; display:none;">ホストが次のエリアへの通信同期を行うのを待っています...</p>
+        </div>
+    </div>
+
 </div>
 
 <script>
+    // --- 変数と基本処理（前フェーズ同様） ---
     let luck = 0;
     let hasSpun = false;
     let myCharacter = {};
     let isHost = false;
+    let currentRoute = ""; // 'west' か 'east'
 
     const adjectives = ["怪しい", "熱血な", "やたら筋肉質な", "不眠症の", "元ヤンの", "プロ奢られ手の", "エリート", "隠れオタクの", "人見知りの", "自称・天才"];
-
     const jobPool = {
         any: ["占い師", "幼稚園の先生", "ひよこ鑑定士", "カレー屋の店主", "水族館の飼育員", "探偵", "実演販売士", "図書館司書", "ユーチューバー"],
         mind: ["占い師", "探偵", "図書館司書", "心理カウンセラー", "大学教授"],
@@ -192,12 +254,8 @@
 
     function spinRoulette() {
         if(hasSpun) return;
-        
-        // 【修正】5〜50の範囲から1刻みで完全にランダム生成
         luck = Math.floor(Math.random() * (50 - 5 + 1)) + 5;
-        
         document.getElementById('luck-val').innerText = luck;
-        
         document.getElementById('mind-range').disabled = false;
         document.getElementById('skill-range').disabled = false;
         document.getElementById('body-range').disabled = false;
@@ -212,7 +270,6 @@
         let mind = parseInt(document.getElementById('mind-range').value);
         let skill = parseInt(document.getElementById('skill-range').value);
         let body = parseInt(document.getElementById('body-range').value);
-        
         document.getElementById('mind-val').innerText = mind;
         document.getElementById('skill-val').innerText = skill;
         document.getElementById('body-val').innerText = body;
@@ -237,9 +294,7 @@
         let mind = parseInt(document.getElementById('mind-range').value);
         let skill = parseInt(document.getElementById('skill-range').value);
         let body = parseInt(document.getElementById('body-range').value);
-        
         let selectedJobPool = [];
-        
         if (mind === 10 && skill === 10 && body === 10) {
             selectedJobPool = jobPool.any;
         } else {
@@ -248,7 +303,6 @@
             if (skill === maxVal) selectedJobPool = selectedJobPool.concat(jobPool.skill);
             if (body === maxVal) selectedJobPool = selectedJobPool.concat(jobPool.body);
         }
-
         const randomAdj = adjectives[Math.floor(Math.random() * adjectives.length)];
         const randomJob = selectedJobPool[Math.floor(Math.random() * selectedJobPool.length)];
         document.getElementById('job-input').value = `${randomAdj}${randomJob}`;
@@ -276,6 +330,7 @@
         window.scrollTo(0, 0);
     }
     function goToStorySelect() { showPage('page-lobby-select'); }
+    
     function createParty() {
         isHost = true;
         const randomRoomId = Math.floor(1000 + Math.random() * 9000);
@@ -301,6 +356,7 @@
             <div class="member-item"><span>👤 あなた (${myCharacter.name})</span> <span>心:${myCharacter.mind} 技:${myCharacter.skill} 体:${myCharacter.body} 運:${myCharacter.luck}</span></div>
         `;
     }
+    
     function startMission() {
         showPage('page-story-intro');
         setupInvestigateButtons();
@@ -312,6 +368,7 @@
             document.getElementById('intro-wait-msg').style.display = 'block';
         }
     }
+    
     function setupInvestigateButtons() {
         const stats = [
             { id: 'btn-inv-mind', value: myCharacter.mind },
@@ -324,17 +381,102 @@
             document.getElementById(stat.id).disabled = (stat.value !== maxValue);
         });
     }
+    
     function showSecret(type) {
         const secretArea = document.getElementById('secret-area');
         const secretText = document.getElementById('secret-text');
         let message = "";
-        if (type === 'mind') message = "【狂気の血文字を発見】壁の染みは人間の血で書かれた呪文だ。あなたの高い感受性（心）は、これが異次元のナニカを讃える不気味な羅列であることを直感し、激しい頭痛に襲われる。";
+        if (type === 'mind') message = "【狂気の血文字を発見】壁の染みは人間の血で書かれた呪文だ。あなたの高い感受性（心）は、これが異次元 of ナニカを讃える不気味な羅列であることを直感し、激しい頭痛に襲われる。";
         else if (type === 'skill') message = "【壊れた端末のログ復旧に成功】受付デスクのPCからログを抽出。『奴らは下層から湧いた。銃も効かない。研究員たちは狂い、お互いを貪り合っている。あの神の幼体を外に出してはならな…』";
         else if (type === 'body') message = "【異常な戦闘痕の察知】床の粘液をたどると、鋼鉄の壁が『巨大な爪のようなもの』で引き裂かれている。警備員の銃器もひしゃげて転がっている。通常の生物の筋力では不可能な破壊痕だ。";
         secretText.innerText = message;
         secretArea.style.display = 'block';
     }
-    function goToNextArea() { alert("次の部屋への同期処理（中盤の画面を次回追加します！）"); }
+
+    // --- 【新機能】分かれ道とダイス判定のコントロール ---
+    
+    function goToNextArea() {
+        showPage('page-story-choice');
+    }
+
+    function selectRoute(route) {
+        currentRoute = route;
+        showPage('page-story-dice');
+        
+        const dTitle = document.getElementById('dice-title');
+        const dStory = document.getElementById('dice-story');
+        const dInst = document.getElementById('dice-instruction');
+        
+        // 判定エリアのリセット
+        document.getElementById('roll-btn').disabled = false;
+        document.getElementById('dice-result-area').style.display = 'none';
+        document.getElementById('dice-outcome-box').style.display = 'none';
+
+        if (route === 'west') {
+            dTitle.innerText = "西棟：研究開発エリア［ハッキング関門］";
+            dStory.innerText = "西棟の重厚な防壁扉の前に到着した。コンソールパネルは赤く点滅し、外部からの操作を拒絶している。\n無理にこじ開ければ警報が響くだろう。ここは電子回路をハッキングし、静かにロックを解除するしかない。";
+            dInst.innerHTML = `チーム内で最も <span class="highlight">【技 (Skill): ${myCharacter.skill}%】</span> が高い人がダイスを振ってください。`;
+            document.getElementById('dice-target').innerText = myCharacter.skill;
+        } else {
+            dTitle.innerText = "東棟：生体管理エリア［精神狂気関門］";
+            dStory.innerText = "東棟の暗い階段を下りると、肉が焦げたような悪臭と、精神をかきむしるような「謎の怪音」が響き渡っている。\n常人であれば一歩進むだけで発狂しかねない異界の気配だ。恐怖に耐え、冷静に周囲を察知せよ。";
+            dInst.innerHTML = `チーム内で最も <span class="highlight">【心 (Mind): ${myCharacter.mind}%】</span> が高い人がダイスを振ってください。`;
+            document.getElementById('dice-target').innerText = myCharacter.mind;
+        }
+
+        // ホストかメンバーかで進行ボタンの初期制御
+        if (isHost) {
+            document.getElementById('dice-next-btn').style.display = 'block';
+            document.getElementById('dice-wait-msg').style.display = 'none';
+            document.getElementById('dice-next-btn').disabled = true; // ダイスを振るまで次へはいけない
+        } else {
+            document.getElementById('dice-next-btn').style.display = 'none';
+            document.getElementById('dice-wait-msg').style.display = 'block';
+        }
+    }
+
+    function roll100() {
+        document.getElementById('roll-btn').disabled = true;
+        
+        // 1〜100のランダムダイス
+        const roll = Math.floor(Math.random() * 100) + 1;
+        document.getElementById('dice-num').innerText = roll;
+        
+        // ターゲット数値の取得
+        const target = currentRoute === 'west' ? myCharacter.skill : myCharacter.mind;
+        
+        const statusText = document.getElementById('dice-status');
+        const outcomeText = document.getElementById('dice-outcome-text');
+        
+        document.getElementById('dice-result-area').style.display = 'block';
+        document.getElementById('dice-outcome-box').style.display = 'block';
+
+        if (roll <= target) {
+            // 【成功】
+            statusText.innerHTML = "<span class="success-text">ーー 成功 ーー</span>";
+            if (currentRoute === 'west') {
+                outcomeText.innerText = "【成功！】鮮やかな手際でセキュリティコードが書き換えられ、プシューと音を立てて鋼鉄の扉が開いた！その先には、事件の核心が眠る「中央培養室」への最短ルートが続いていた。";
+            } else {
+                outcomeText.innerText = "【成功！】激しい精神の汚染に耐えきった。不気味な怪音の波形から、それが『上層の生物を誘い出すための罠』の音であることを見抜き、危険を回避して最深部へ繋がる通路を発見した。";
+            }
+        } else {
+            // 【失敗】
+            statusText.innerHTML = "<span class="highlight">ーー 失敗 ーー</span>";
+            if (currentRoute === 'west') {
+                outcomeText.innerText = "【失敗！】ハッキングに失敗し、システムが赤く大炎上！「ウーウー」とけたたましい警報音（アラーム）が鳴り響く。同時に、通路の奥からベタベタと『何か巨大なものが這ってくる音』が近づいてくる……！";
+            } else {
+                outcomeText.innerText = "【失敗！】一歩踏み出した瞬間、脳髄に直接化け物の咆哮が突き刺さる！あなたは一時的な錯乱（発狂）状態に陥り、Discordの通話越しに悲鳴を上げてしまう。チーム全員、精神に深い傷を負った状態で先へ進むことになる……。";
+            }
+        }
+
+        if (isHost) {
+            document.getElementById('dice-next-btn').disabled = false;
+        }
+    }
+
+    function goToClimax() {
+        alert("作戦最終フェーズへ！（次回、いよいよマルチエンディングが分岐するクライマックスを追加します！）");
+    }
 </script>
 
 </body>
