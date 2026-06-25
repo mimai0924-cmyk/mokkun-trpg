@@ -44,10 +44,6 @@
             background-color: #21262d; border: 1px solid #30363d; color: #58a6ff;
             padding: 12px 24px; font-size: 16px; width: 100%; border-radius: 6px; font-weight: bold;
         }
-        .btn-story {
-            background-color: #8b949e; color: #0d1117; margin-top: 10px;
-        }
-        /* 個別調査ボタンの専用スタイル */
         .btn-investigate {
             background-color: #1f6feb; color: white; margin: 8px 0;
         }
@@ -59,6 +55,7 @@
         .status-label { display: flex; justify-content: space-between; font-size: 16px; margin-bottom: 8px; }
         input[type="range"] { width: 100%; height: 10px; background: #21262d; border-radius: 5px; outline: none; -webkit-appearance: none; }
         input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 24px; height: 24px; border-radius: 50%; background: #58a6ff; cursor: pointer; }
+        input[type="range"]:disabled::-webkit-slider-thumb { background: #30363d; cursor: not-allowed; }
         input[type="text"], input[type="number"], select {
             width: 100%; padding: 12px; background: #0d1117; border: 1px solid #30363d;
             color: white; border-radius: 6px; box-sizing: border-box; font-size: 16px; margin-bottom: 15px;
@@ -73,7 +70,6 @@
         .member-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #21262d; }
         .member-item:last-child { border-bottom: none; }
         
-        /* シークレット情報のポップアップ */
         .secret-box {
             background: #1c1314; border: 1px solid #ff7b72; color: #ffa6a1;
             padding: 15px; border-radius: 6px; margin-top: 15px; text-align: left; display: none;
@@ -94,9 +90,12 @@
         </div>
 
         <div class="box">
-            <h3>2. 基礎ステータス配分 (合計80%にする)</h3>
-            <p style="font-size:16px; color:#58a6ff; margin-top:10px;">現在の3つの合計: <span id="total-val">30</span> / 80 %</p>
-            <p id="error-msg" class="error-msg">⚠️ 調整が必要です。</p>
+            <h3>2. 基礎ステータス配分</h3>
+            <p style="font-size:14px; color:#8b949e; text-align:left; margin-bottom:10px;">
+                ※【心・技・体＋運】の合計がピッタリ<span style="color:#58a6ff; font-weight:bold;">80%</span>になるように調整してください。
+            </p>
+            <p style="font-size:16px; color:#58a6ff; margin-top:10px;">心技体＋運の合計: <span id="total-val">30</span> / 80 %</p>
+            <p id="error-msg" class="error-msg">⚠️ ルーレットを起動してください。</p>
             
             <div class="status-row">
                 <div class="status-label"><span>心 (Mind):</span> <span><b id="mind-val">10</b> %</span></div>
@@ -116,7 +115,7 @@
             <h3>3. カバーストーリー（表の職業）</h3>
             <div class="flex-group">
                 <input type="text" id="job-input" placeholder="例: 警察, 医師, 教師" oninput="checkReady()">
-                <button class="btn-secondary" style="margin:0; width:auto; white-space:nowrap; padding:10px;" onclick="generateRandomJob()">ランダム生成</button>
+                <button id="random-job-btn" class="btn-secondary" disabled style="margin:0; width:auto; white-space:nowrap; padding:10px;" onclick="generateRandomJob()">ランダム生成</button>
             </div>
             <p style="text-align: left; font-size: 14px; color: #8b949e; margin-top: 10px;">
                 【特殊能力】 <span id="job-name" class="highlight">未設定</span>: <span class="highlight">20%</span> (固定値)
@@ -129,16 +128,11 @@
     <div id="page-lobby-select" class="page">
         <div class="box">
             <h3>4. ミッション（ストーリー）選択</h3>
-            <select id="story-select">
-                <option value="story1">作戦コード：深淵の研究所 (推奨:2〜4人)</option>
-            </select>
+            <select id="story-select"><option value="story1">作戦コード：深淵の研究所 (推奨:2〜4人)</option></select>
         </div>
-
         <div class="box">
             <h3>5. パーティの結成</h3>
-            <p style="font-size:14px; color:#8b949e; text-align:left; margin-bottom:15px;">
-                あなたがホストとなり部屋を作るか、友達が作った部屋番号を入力して参加してください。会話はDiscord等で行ってください。
-            </p>
+            <p style="font-size:14px; color:#8b949e; text-align:left; margin-bottom:15px;">あなたがホストとなり部屋を作るか、友達が作った部屋番号を入力して参加してください。</p>
             <button onclick="createParty()">新規パーティを結成（ホスト）</button>
             <div style="margin: 15px 0; border-top: 1px solid #30363d; padding-top: 15px;"></div>
             <input type="number" id="room-input" placeholder="4桁の部屋番号を入力">
@@ -151,14 +145,8 @@
             <h3 id="lobby-title">パーティ待機中...</h3>
             <p style="font-size:14px; color:#8b949e; margin-bottom:5px;">【共有用】部屋番号（ROOM ID）</p>
             <div id="room-display" class="room-number">0000</div>
-            <p style="font-size:12px; color:#ff7b72;">※この番号をDiscordなどでメンバーに共有してください。</p>
         </div>
-
-        <div class="box">
-            <h3>現在の潜入メンバー</h3>
-            <div class="member-list" id="member-container"></div>
-        </div>
-
+        <div class="box"><h3>現在の潜入メンバー</h3><div class="member-list" id="member-container"></div></div>
         <button id="start-btn" style="display:none;" onclick="startMission()">ミッション開始（通信同期用）</button>
         <p id="member-wait-msg" style="color:#8b949e; font-size:14px; display:none;">ホストが作戦を開始するのを待っています...</p>
     </div>
@@ -169,69 +157,55 @@
             <div class="story-text">
 あなたたちは組織の命を受け、人里離れた山奥にある製薬会社の「地下研究施設」へと潜入した。
 ここ数日、施設からの通信が完全に途絶えており、裏で「違法な生物実験」が行われていた噂がある。
-
-重い鋼鉄の扉をハッキングしてこじ開けると、そこは不気味なほど静まり返ったエントランスロビーだった。
-明かりはチカチカと点滅し、異様な寒気が肌を刺す。そして、床には緑色の不気味な「粘液」がべっとりと付着していた……。
-
-生存者の気配はない。ここを突破するため、各エージェントはそれぞれの得意分野で周囲の調査を開始せよ。
+床には緑色の不気味な「粘液」がべっとりと付着していた……。各エージェントは調査を開始せよ。
             </div>
         </div>
-
         <div class="box">
             <h3>🔍 エージェント個別調査（配役スタイル）</h3>
-            <p style="font-size:13px; color:#8b949e; text-align:left; margin-bottom:10px;">
-                あなた独自のステータスに応じた調査ボタンのみが活性化しています。調査結果をDiscordで仲間に口頭で共有してください。
-            </p>
-            
             <button id="btn-inv-mind" class="btn-investigate" disabled onclick="showSecret('mind')">【心】の調査を行う</button>
             <button id="btn-inv-skill" class="btn-investigate" disabled onclick="showSecret('skill')">【技】の調査を行う</button>
             <button id="btn-inv-body" class="btn-investigate" disabled onclick="showSecret('body')">【体】の調査を行う</button>
-
-            <div id="secret-area" class="secret-box">
-                <strong>👁️ あなただけが見つけた異常（シークレット情報）：</strong>
-                <p id="secret-text" style="margin: 8px 0 0 0; font-size: 14px;"></p>
-            </div>
+            <div id="secret-area" class="secret-box"><strong>👁️ あなただけが見つけた異常：</strong><p id="secret-text" style="margin: 8px 0 0 0; font-size: 14px;"></p></div>
         </div>
-
         <div class="box">
             <h3>次のエリアへ進む</h3>
-            <p style="font-size:13px; color:#8b949e; margin-bottom:10px;">全員が口頭での情報共有を終えたら、ホストの合図で進んでください。</p>
             <button id="intro-next-btn" style="display:none;" onclick="goToNextArea()">次の部屋（分かれ道）へ進む</button>
             <p id="intro-wait-msg" style="color:#8b949e; font-size:14px; display:none;">ホストが次のエリアへの扉を開けるのを待っています...</p>
         </div>
     </div>
-
 </div>
 
 <script>
-    // --- 変数管理 ---
     let luck = 0;
     let hasSpun = false;
     let myCharacter = {};
-    let isHost = false; // 自分がホストかどうかを判定するフラグ
+    let isHost = false;
 
+    // 接頭辞（共通）
     const adjectives = ["怪しい", "熱血な", "やたら筋肉質な", "不眠症の", "元ヤンの", "プロ奢られ手の", "エリート", "隠れオタクの", "人見知りの", "自称・天才"];
-    const jobs = ["占い師", "幼稚園の先生", "ひよこ鑑定士", "カレー屋の店主", "水族館の飼育員", "探偵", "実演販売士", "図書館司書", "ユーチューバー"];
 
-    // --- キャラメイク処理 ---
+    // 能力値ごとのカバーストーリー（職業）リスト
+    const jobPool = {
+        any: ["占い師", "幼稚園の先生", "ひよこ鑑定士", "カレー屋の店主", "水族館の飼育員", "探偵", "実演販売士", "図書館司書", "ユーチューバー"],
+        mind: ["占い師", "探偵", "図書館司書", "心理カウンセラー", "大学教授"],
+        skill: ["実演販売士", "ユーチューバー", "ひよこ鑑定士", "マジシャン", "プログラマー"],
+        body: ["水族館の飼育員", "警察", "幼稚園の先生", "パーソナルトレーナー", "スタントマン"]
+    };
+
     function spinRoulette() {
         if(hasSpun) return;
         const luckOptions = [10, 20, 30, 40, 50];
         luck = luckOptions[Math.floor(Math.random() * luckOptions.length)];
         document.getElementById('luck-val').innerText = luck;
+        
+        // スライダーを有効化
         document.getElementById('mind-range').disabled = false;
         document.getElementById('skill-range').disabled = false;
         document.getElementById('body-range').disabled = false;
+        document.getElementById('random-job-btn').disabled = false;
         document.getElementById('roulette-btn').disabled = true;
         hasSpun = true;
         updateStats();
-    }
-
-    function generateRandomJob() {
-        const randomAdj = adjectives[Math.floor(Math.random() * adjectives.length)];
-        const randomJob = jobs[Math.floor(Math.random() * jobs.length)];
-        document.getElementById('job-input').value = `${randomAdj}${randomJob}`;
-        checkReady();
     }
 
     function updateStats() {
@@ -239,11 +213,13 @@
         let mind = parseInt(document.getElementById('mind-range').value);
         let skill = parseInt(document.getElementById('skill-range').value);
         let body = parseInt(document.getElementById('body-range').value);
+        
         document.getElementById('mind-val').innerText = mind;
         document.getElementById('skill-val').innerText = skill;
         document.getElementById('body-val').innerText = body;
 
-        let total = mind + skill + body;
+        // 【心＋技＋体＋運】の合計を計算
+        let total = mind + skill + body + luck;
         document.getElementById('total-val').innerText = total;
 
         const errorMsg = document.getElementById('error-msg');
@@ -259,6 +235,30 @@
         checkReady();
     }
 
+    function generateRandomJob() {
+        let mind = parseInt(document.getElementById('mind-range').value);
+        let skill = parseInt(document.getElementById('skill-range').value);
+        let body = parseInt(document.getElementById('body-range').value);
+        
+        let selectedJobPool = [];
+        
+        // 全て初期値（10%ずつ）の場合は完全ランダム
+        if (mind === 10 && skill === 10 && body === 10) {
+            selectedJobPool = jobPool.any;
+        } else {
+            // 一番高いステータスを判定
+            let maxVal = Math.max(mind, skill, body);
+            if (mind === maxVal) selectedJobPool = selectedJobPool.concat(jobPool.mind);
+            if (skill === maxVal) selectedJobPool = selectedJobPool.concat(jobPool.skill);
+            if (body === maxVal) selectedJobPool = selectedJobPool.concat(jobPool.body);
+        }
+
+        const randomAdj = adjectives[Math.floor(Math.random() * adjectives.length)];
+        const randomJob = selectedJobPool[Math.floor(Math.random() * selectedJobPool.length)];
+        document.getElementById('job-input').value = `${randomAdj}${randomJob}`;
+        checkReady();
+    }
+
     function checkReady() {
         let mind = parseInt(document.getElementById('mind-range').value);
         let skill = parseInt(document.getElementById('skill-range').value);
@@ -266,7 +266,8 @@
         let job = document.getElementById('job-input').value;
         document.getElementById('job-name').innerText = job ? job : "未設定";
 
-        if (hasSpun && (mind + skill + body === 80) && job.trim() !== "") {
+        // 心+技+体+運がピッタリ80% かつ 職業が入力されている
+        if (hasSpun && (mind + skill + body + luck === 80) && job.trim() !== "") {
             document.getElementById('submit-btn').disabled = false;
             myCharacter = { name: job, mind: mind, skill: skill, body: body, luck: luck };
         } else {
@@ -274,60 +275,41 @@
         }
     }
 
-    // --- 画面遷移のコントロール ---
+    // --- 画面遷移とマルチ（デモ）処理 ---
     function showPage(pageId) {
         document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
         document.getElementById(pageId).classList.add('active');
         window.scrollTo(0, 0);
     }
-
-    function goToStorySelect() {
-        showPage('page-lobby-select');
-    }
-
-    // --- マルチプレイ（デモ）処理 ---
+    function goToStorySelect() { showPage('page-lobby-select'); }
     function createParty() {
         isHost = true;
         const randomRoomId = Math.floor(1000 + Math.random() * 9000);
         document.getElementById('room-display').innerText = randomRoomId;
-        
         showPage('page-lobby-wait');
         document.getElementById('start-btn').style.display = 'block';
         document.getElementById('member-wait-msg').style.display = 'none';
-
-        const container = document.getElementById('member-container');
-        container.innerHTML = `
+        document.getElementById('member-container').innerHTML = `
             <div class="member-item"><span>👑 あなた (${myCharacter.name})</span> <span>心:${myCharacter.mind} 技:${myCharacter.skill} 体:${myCharacter.body} 運:${myCharacter.luck}</span></div>
-            <div class="member-item" style="color:#8b949e;"><span>👤 ゲストA (不眠症の占い師)</span> <span>心:40 技:20 体:20 運:30</span></div>
+            <div class="member-item" style="color:#8b949e;"><span>👤 ゲストA (不眠症の占い師)</span> <span>心:30 技:20 体:20 運:10</span></div>
         `;
     }
-
     function joinParty() {
         isHost = false;
         const roomInput = document.getElementById('room-input').value;
-        if(!roomInput || roomInput.length < 4) {
-            alert("正しい4桁の部屋番号を入力してください。");
-            return;
-        }
+        if(!roomInput || roomInput.length < 4) { alert("正しい4桁の部屋番号を入力してください。"); return; }
         document.getElementById('room-display').innerText = roomInput;
-
         showPage('page-lobby-wait');
         document.getElementById('start-btn').style.display = 'none';
         document.getElementById('member-wait-msg').style.display = 'block';
-
-        const container = document.getElementById('member-container');
-        container.innerHTML = `
-            <div class="member-item" style="color:#8b949e;"><span>👑 ホスト (エリート探偵)</span> <span>心:50 技:20 体:10 運:20</span></div>
+        document.getElementById('member-container').innerHTML = `
+            <div class="member-item" style="color:#8b949e;"><span>👑 ホスト (エリート探偵)</span> <span>心:30 技:10 体:20 運:20</span></div>
             <div class="member-item"><span>👤 あなた (${myCharacter.name})</span> <span>心:${myCharacter.mind} 技:${myCharacter.skill} 体:${myCharacter.body} 運:${myCharacter.luck}</span></div>
         `;
     }
-
-    // --- ストーリー本編のコントロール ---
     function startMission() {
         showPage('page-story-intro');
         setupInvestigateButtons();
-
-        // ホストかメンバーかで進行ボタンの表示を変える
         if (isHost) {
             document.getElementById('intro-next-btn').style.display = 'block';
             document.getElementById('intro-wait-msg').style.display = 'none';
@@ -336,51 +318,29 @@
             document.getElementById('intro-wait-msg').style.display = 'block';
         }
     }
-
-    // ステータスに応じてボタンの有効・無効を切り替える関数
     function setupInvestigateButtons() {
-        // 心・技・体の中で、一番高いステータスを見つける
         const stats = [
             { id: 'btn-inv-mind', value: myCharacter.mind },
             { id: 'btn-inv-skill', value: myCharacter.skill },
             { id: 'btn-inv-body', value: myCharacter.body }
         ];
-        
-        // 値が大きい順に並び替え
         stats.sort((a, b) => b.value - a.value);
-        
-        // 一番高いステータスのボタンだけを活性化（同点の場合は複数が活性化）
         const maxValue = stats[0].value;
         stats.forEach(stat => {
-            if (stat.value === maxValue) {
-                document.getElementById(stat.id).disabled = false;
-            } else {
-                document.getElementById(stat.id).disabled = true;
-            }
+            document.getElementById(stat.id).disabled = (stat.value !== maxValue);
         });
     }
-
-    // 個別シークレット情報の表示
     function showSecret(type) {
         const secretArea = document.getElementById('secret-area');
         const secretText = document.getElementById('secret-text');
-        
         let message = "";
-        if (type === 'mind') {
-            message = "【狂気の血文字を発見】\n壁の染みだと思っていた黒ずみは、人間の血で書かれた文字だ。あなたの高い感受性（心）は、それがこの世の言語ではなく、異次元のナニカを讃える不気味な呪文の羅列であることを直感し、激しい頭痛に襲われる。";
-        } else if (type === 'skill') {
-            message = "【壊れた端末のログ復旧に成功】\n受付デスクの粉砕されたPCから、奇跡的に最後の数秒のログを抜き出した。『…奴らは下層から湧いて出た。銃も効かない。研究員たちは狂い、お互いを貪り合っている。あいつを…あの神の幼体を外に出してはならな…』ログはここで途切れている。";
-        } else if (type === 'body') {
-            message = "【異常な戦闘痕の察知】\n引きずられた粘液の跡をたどると、鋼鉄製の分厚い壁が『巨大な爪のようなもの』で紙のように引き裂かれているのを発見する。この施設の警備員が持っていた銃器もひしゃげて転がっている。人間や通常の野生動物の筋力では絶対に不可能な破壊痕だ。";
-        }
-        
+        if (type === 'mind') message = "【狂気の血文字を発見】壁の染みは人間の血で書かれた呪文だ。あなたの高い感受性（心）は、これが異次元のナニカを讃える不気味な羅列であることを直感し、激しい頭痛に襲われる。";
+        else if (type === 'skill') message = "【壊れた端末のログ復旧に成功】受付デスクのPCからログを抽出。『奴らは下層から湧いた。銃も効かない。研究員たちは狂い、お互いを貪り合っている。あの神の幼体を外に出してはならな…』";
+        else if (type === 'body') message = "【異常な戦闘痕の察知】床の粘液をたどると、鋼鉄の壁が『巨大な爪のようなもの』で引き裂かれている。警備員の銃器もひしゃげて転がっている。通常の生物の筋力では不可能な破壊痕だ。";
         secretText.innerText = message;
         secretArea.style.display = 'block';
     }
-
-    function goToNextArea() {
-        alert("次の部屋への同期処理（ここへ中盤の『分かれ道選択画面』を次回追加します！）");
-    }
+    function goToNextArea() { alert("次の部屋への同期処理（中盤の画面を次回追加します！）"); }
 </script>
 
 </body>
