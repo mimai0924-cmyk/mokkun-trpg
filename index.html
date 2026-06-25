@@ -155,9 +155,9 @@
         <div class="box">
             <h3>作戦コード：深淵の研究所 - 潜入開始</h3>
             <div class="story-text">
-あなたたちは組織の命を受け、人里離れた山奥にある製薬会社の「地下研究施設」へと潜入した。
-ここ数日、施設からの通信が完全に途絶えており、裏で「違法な生物実験」が行われていた噂がある。
-床には緑色の不気味な「粘液」がべっとりと付着していた……。各エージェントは調査を開始せよ。
+    あなたたちは組織の命を受け、人里離れた山奥にある製薬会社の「地下研究施設」へと潜入した。
+    ここ数日、施設からの通信が完全に途絶えており、裏で「違法な生物実験」が行われていた噂がある。
+    床には緑色の不気味な「粘液」がべっとりと付着していた……。各エージェントは調査を開始せよ。
             </div>
         </div>
         <div class="box">
@@ -181,10 +181,8 @@
     let myCharacter = {};
     let isHost = false;
 
-    // 接頭辞（共通）
     const adjectives = ["怪しい", "熱血な", "やたら筋肉質な", "不眠症の", "元ヤンの", "プロ奢られ手の", "エリート", "隠れオタクの", "人見知りの", "自称・天才"];
 
-    // 能力値ごとのカバーストーリー（職業）リスト
     const jobPool = {
         any: ["占い師", "幼稚園の先生", "ひよこ鑑定士", "カレー屋の店主", "水族館の飼育員", "探偵", "実演販売士", "図書館司書", "ユーチューバー"],
         mind: ["占い師", "探偵", "図書館司書", "心理カウンセラー", "大学教授"],
@@ -194,11 +192,12 @@
 
     function spinRoulette() {
         if(hasSpun) return;
-        const luckOptions = [10, 20, 30, 40, 50];
-        luck = luckOptions[Math.floor(Math.random() * luckOptions.length)];
+        
+        // 【修正】5〜50の範囲から1刻みで完全にランダム生成
+        luck = Math.floor(Math.random() * (50 - 5 + 1)) + 5;
+        
         document.getElementById('luck-val').innerText = luck;
         
-        // スライダーを有効化
         document.getElementById('mind-range').disabled = false;
         document.getElementById('skill-range').disabled = false;
         document.getElementById('body-range').disabled = false;
@@ -218,7 +217,6 @@
         document.getElementById('skill-val').innerText = skill;
         document.getElementById('body-val').innerText = body;
 
-        // 【心＋技＋体＋運】の合計を計算
         let total = mind + skill + body + luck;
         document.getElementById('total-val').innerText = total;
 
@@ -242,11 +240,9 @@
         
         let selectedJobPool = [];
         
-        // 全て初期値（10%ずつ）の場合は完全ランダム
         if (mind === 10 && skill === 10 && body === 10) {
             selectedJobPool = jobPool.any;
         } else {
-            // 一番高いステータスを判定
             let maxVal = Math.max(mind, skill, body);
             if (mind === maxVal) selectedJobPool = selectedJobPool.concat(jobPool.mind);
             if (skill === maxVal) selectedJobPool = selectedJobPool.concat(jobPool.skill);
@@ -266,7 +262,6 @@
         let job = document.getElementById('job-input').value;
         document.getElementById('job-name').innerText = job ? job : "未設定";
 
-        // 心+技+体+運がピッタリ80% かつ 職業が入力されている
         if (hasSpun && (mind + skill + body + luck === 80) && job.trim() !== "") {
             document.getElementById('submit-btn').disabled = false;
             myCharacter = { name: job, mind: mind, skill: skill, body: body, luck: luck };
@@ -275,7 +270,6 @@
         }
     }
 
-    // --- 画面遷移とマルチ（デモ）処理 ---
     function showPage(pageId) {
         document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
         document.getElementById(pageId).classList.add('active');
